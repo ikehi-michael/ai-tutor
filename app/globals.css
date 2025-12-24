@@ -1,26 +1,450 @@
 @import "tailwindcss";
 
+/* ============================================
+   THE STEM STUDIO - Custom Design System
+   Blue, Red & White - Bold & Academic
+   Fonts loaded via layout.tsx <link> tags
+   ============================================ */
+
+/* ============================================
+   CSS VARIABLES - Blue, Red & White Palette
+   ============================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary - Bold Red (Energy, Action) */
+  --red: #E63946;
+  --red-light: #FF6B6B;
+  --red-dark: #C1121F;
+  
+  /* Secondary - Deep Blue (Trust, Intelligence) */
+  --blue: #1D3557;
+  --blue-light: #457B9D;
+  --blue-lighter: #A8DADC;
+  --blue-dark: #14213D;
+  
+  /* Neutral - Clean White/Light */
+  --white: #FFFFFF;
+  --off-white: #F8F9FA;
+  --light-gray: #E9ECEF;
+  --gray: #6C757D;
+  
+  /* Supporting Colors */
+  --navy: #0A1628;
+  --sky: #4CC9F0;
+  --gold: #FFB703;
+  --success: #2A9D8F;
+  --warning: #F4A261;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--red) 0%, var(--red-light) 100%);
+  --gradient-blue: linear-gradient(135deg, var(--blue) 0%, var(--blue-light) 100%);
+  --gradient-hero: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 50%, var(--navy) 100%);
+  --gradient-light: linear-gradient(135deg, var(--white) 0%, var(--off-white) 100%);
+  
+  /* Glass Effect - Dark Mode */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-red-glow: 0 0 40px rgba(230, 57, 70, 0.3);
+  --shadow-blue-glow: 0 0 40px rgba(69, 123, 157, 0.3);
+  
+  /* Dark Mode Defaults */
+  --background: var(--blue-dark);
+  --foreground: var(--white);
+  --muted: #A8B2C1;
+  --card-bg: var(--blue);
 }
 
+/* Light Mode Override */
+[data-theme="light"] {
+  --background: var(--off-white);
+  --foreground: var(--blue-dark);
+  --muted: var(--gray);
+  --card-bg: var(--white);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(29, 53, 87, 0.1);
+  --glass-shadow: 0 8px 32px rgba(29, 53, 87, 0.1);
+}
+
+/* ============================================
+   TAILWIND THEME EXTENSION
+   ============================================ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-red: var(--red);
+  --color-red-light: var(--red-light);
+  --color-red-dark: var(--red-dark);
+  --color-blue: var(--blue);
+  --color-blue-light: var(--blue-light);
+  --color-blue-lighter: var(--blue-lighter);
+  --color-blue-dark: var(--blue-dark);
+  --color-navy: var(--navy);
+  --color-sky: var(--sky);
+  --color-gold: var(--gold);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-white: var(--white);
+  --color-off-white: var(--off-white);
+  --color-light-gray: var(--light-gray);
+  --color-gray: var(--gray);
+  --color-muted: var(--muted);
+  --color-card: var(--card-bg);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-heading);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================
+   BASE STYLES
+   ============================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
+  font-family: var(--font-body);
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Rich Background with subtle pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-hero);
+  z-index: -2;
+}
+
+/* Subtle grid pattern overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); }
+h2 { font-size: clamp(2rem, 4vw, 3rem); }
+h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+h4 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+
+p {
+  font-family: var(--font-body);
+  line-height: 1.7;
+}
+
+/* ============================================
+   CUSTOM COMPONENTS
+   ============================================ */
+
+/* Glass Card Effect */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-blue {
+  background: var(--gradient-blue);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow Effects */
+.glow-red {
+  box-shadow: var(--shadow-red-glow);
+}
+
+.glow-blue {
+  box-shadow: var(--shadow-blue-glow);
+}
+
+/* Primary Button - Red */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(230, 57, 70, 0.4);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(230, 57, 70, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--foreground);
+  background: transparent;
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--glass-bg);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Input Styles */
+.input-field {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--foreground);
+  background: var(--glass-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-field::placeholder {
+  color: var(--muted);
+}
+
+.input-field:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.1);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(230, 57, 70, 0.3);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(230, 57, 70, 0.5);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out forwards;
+}
+
+/* Stagger animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--blue);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--blue-light);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--red);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+.text-balance {
+  text-wrap: balance;
+}
+
+.container-app {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Selection */
+::selection {
+  background: var(--red);
+  color: white;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   KaTeX Math Rendering Styles
+   ============================================ */
+.math-content {
+  line-height: 1.6;
+}
+
+/* KaTeX block math styling */
+.katex-display {
+  margin: 1.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.katex-display > .katex {
+  display: inline-block;
+  text-align: left;
+}
+
+/* KaTeX inline math styling */
+.katex {
+  font-size: 1.1em;
+  color: inherit;
+}
+
+/* Ensure math equations are readable in dark theme */
+.katex .base {
+  color: inherit;
+}
+
+.katex .mord {
+  color: inherit;
+}
+
+/* Formula display in code blocks */
+.math-content .katex-display {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
