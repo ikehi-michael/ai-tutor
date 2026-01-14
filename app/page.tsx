@@ -555,7 +555,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-sm text-muted">
-              © 2025 The Stem Studio.
+              © 2026 The Stem Studio.
             </p>
           </div>
         </div>
