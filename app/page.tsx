@@ -15,10 +15,10 @@ import {
   CheckCircle2,
   Play,
   Star,
-  GraduationCap,
   Zap,
-  Atom,
-  LayoutDashboard
+  LayoutDashboard,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -46,12 +46,30 @@ const scaleIn = {
 export default function LandingPage() {
   const { isAuthenticated, user, checkAuth } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Check auth status on mount
   useEffect(() => {
     checkAuth();
     setIsInitialized(true);
   }, [checkAuth]);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [isAuthenticated]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isMobileMenuOpen]);
 
   // Determine dashboard URL based on user role
   const dashboardUrl = user?.role === "parent" ? "/dashboard/parent" : "/dashboard";
@@ -91,8 +109,8 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Auth Buttons */}
-            <div className="flex items-center gap-3">
+            {/* Auth Buttons - Desktop Only */}
+            <div className="hidden md:flex items-center gap-3">
               {isInitialized && isAuthenticated ? (
                 <Link href={dashboardUrl}>
                   <Button variant="primary" size="sm">
@@ -114,9 +132,107 @@ export default function LandingPage() {
                 </>
               )}
             </div>
+
+            {/* Hamburger Menu Button - Mobile Only */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-white hover:text-red transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
           </div>
         </div>
+
       </nav>
+
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Drawer - Slides from Right */}
+      <motion.div
+        initial={false}
+        animate={{
+          x: isMobileMenuOpen ? 0 : "100%"
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-blue-dark border-l border-[rgba(255,255,255,0.05)] z-50 md:hidden overflow-y-auto"
+      >
+        <div className="p-6 space-y-6">
+          {/* Close Button */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 text-white hover:text-red transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Mobile Nav Links */}
+          <div className="flex flex-col gap-4">
+            <Link 
+              href="#features" 
+              className="text-white hover:text-red transition-colors py-2 font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Features
+            </Link>
+            <Link 
+              href="#subjects" 
+              className="text-white hover:text-red transition-colors py-2 font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Subjects
+            </Link>
+            <Link 
+              href="#pricing" 
+              className="text-white hover:text-red transition-colors py-2 font-medium"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Pricing
+            </Link>
+          </div>
+
+          {/* Mobile Auth Buttons */}
+          <div className="flex flex-col gap-3 pt-6 border-t border-[rgba(255,255,255,0.1)]">
+            {isInitialized && isAuthenticated ? (
+              <Link href={dashboardUrl} onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="primary" size="sm" className="w-full">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="sm" className="w-full">Log In</Button>
+                </Link>
+                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="primary" size="sm" className="w-full">
+                    Get Started
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </motion.div>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
@@ -145,12 +261,10 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="text-4xl md:text-6xl lg:text-7xl font-[family-name:var(--font-heading)] font-bold text-white mb-6"
             >
-              Ace Your{" "}
-              <span className="gradient-text">WAEC</span>
-              {" "}& {" "}
-              <span className="gradient-text">JAMB</span>
+              The Future of{" "}
+              <span className="gradient-text">Nigerian Education</span>
               <br />
-              with AI Superpowers
+              Starts Here
             </motion.h1>
 
             {/* Subheading */}
@@ -158,8 +272,8 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-10"
             >
-              Your personal AI tutor that solves past questions step-by-step, creates custom study plans, 
-              and helps you understand any topic instantly. Available 24/7, affordable, and designed for Nigerian students.
+              Are you ready to ace your exams? Step-by-step solutions, personalized study plans, 
+              and instant topic mastery—powered by AI, built for Nigerian students.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -179,7 +293,7 @@ export default function LandingPage() {
                   <Link href="/register">
                     <Button variant="primary" size="lg">
                       <Zap className="w-5 h-5" />
-                      Start Learning Free
+                      Start Learning
                     </Button>
                   </Link>
                   <Button variant="secondary" size="lg">
@@ -223,7 +337,7 @@ export default function LandingPage() {
         </div>
 
         {/* Scroll Indicator */}
-        <motion.div 
+        {/* <motion.div 
           className="absolute bottom-8 left-1/2 -translate-x-1/2"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
@@ -231,7 +345,7 @@ export default function LandingPage() {
           <div className="w-6 h-10 rounded-full border-2 border-muted/50 flex items-start justify-center p-2">
             <div className="w-1.5 h-3 rounded-full bg-red" />
           </div>
-        </motion.div>
+        </motion.div> */}
       </section>
 
       {/* Features Section */}
@@ -397,14 +511,14 @@ export default function LandingPage() {
                   <Link href="/register">
                     <Button variant="primary" size="lg">
                       <Zap className="w-5 h-5" />
-                      Get Started for Free
+                      Get Started
                       <ArrowRight className="w-5 h-5" />
                     </Button>
                   </Link>
                 )}
-                <p className="text-muted/70 text-sm mt-6">
+                {/* <p className="text-muted/70 text-sm mt-6">
                   No credit card required • 10 free questions per week
-                </p>
+                </p> */}
               </div>
             </div>
           </motion.div>

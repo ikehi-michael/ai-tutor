@@ -161,7 +161,7 @@ export default function ProgressPage() {
         <Card variant="gradient">
           <CardContent className="p-4 text-center">
             <div className="w-10 h-10 rounded-xl bg-blue/20 flex items-center justify-center mx-auto mb-2">
-              <Target className="w-5 h-5 text-blue" />
+              <Target className="w-5 h-5 text-blue-light" />
             </div>
             <p className="text-2xl font-bold text-foreground">{overallAccuracy}%</p>
             <p className="text-xs text-muted">Accuracy</p>
@@ -287,24 +287,27 @@ export default function ProgressPage() {
               </div>
 
               {progressChart?.data && progressChart.data.length > 0 ? (
-                <div className="flex items-end justify-between h-40 gap-1">
+                <div className="relative h-40 flex items-end justify-between gap-1">
                   {progressChart.data.slice(-7).map((day, index) => {
                     const maxQuestions = Math.max(...progressChart.data.map(d => d.questions_solved), 1);
-                    const height = (day.questions_solved / maxQuestions) * 100;
+                    const heightPercent = maxQuestions > 0 ? (day.questions_solved / maxQuestions) * 100 : 0;
+                    const heightPx = (heightPercent / 100) * 160; // 160px is h-40
                     const date = new Date(day.date);
                     const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
 
                     return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <motion.div
-                          className={cn(
-                            "w-full rounded-t-lg",
-                            day.questions_solved > 0 ? "bg-gradient-to-t from-blue to-blue-light" : "bg-muted/20"
-                          )}
-                          initial={{ height: 0 }}
-                          animate={{ height: day.questions_solved > 0 ? `${height}%` : "4px" }}
-                          transition={{ duration: 0.5, delay: index * 0.1 }}
-                        />
+                      <div key={index} className="flex-1 flex flex-col items-center h-full">
+                        <div className="flex-1 flex items-end w-full">
+                          <motion.div
+                            className={cn(
+                              "w-full rounded-t-lg min-h-[4px]",
+                              day.questions_solved > 0 ? "bg-gradient-to-t from-blue to-blue-light" : "bg-muted/20"
+                            )}
+                            initial={{ height: 0 }}
+                            animate={{ height: day.questions_solved > 0 ? `${heightPx}px` : "4px" }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                          />
+                        </div>
                         <span className="text-xs text-muted mt-2">{dayName}</span>
                         <span className="text-xs text-foreground font-medium">{day.questions_solved}</span>
                       </div>

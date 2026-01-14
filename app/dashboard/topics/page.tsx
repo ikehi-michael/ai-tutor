@@ -178,30 +178,6 @@ const SUBJECTS_DATA = [
   },
 
   {
-    name: "Government",
-    icon: "🏛️",
-    color: "from-slate-500 to-gray-400",
-    topics: [
-      "Meaning of Government",
-      "Constitution",
-      "Types of Government",
-      "Arms of Government",
-      "Citizenship",
-      "Political Parties",
-      "Pressure Groups",
-      "Public Opinion",
-      "Electoral Systems",
-      "Federalism",
-      "Local Government",
-      "Military Rule",
-      "Democracy",
-      "Nigerian Constitution",
-      "Colonial Administration",
-      "Post-Independence Nigeria"
-    ]
-  },
-
-  {
     name: "Literature in English",
     icon: "📖",
     color: "from-pink-500 to-rose-400",
@@ -263,25 +239,6 @@ const SUBJECTS_DATA = [
       "Agricultural Economics",
       "Fisheries",
       "Forestry"
-    ]
-  },
-
-  {
-    name: "Civic Education",
-    icon: "🧑🏽‍⚖️",
-    color: "from-indigo-500 to-blue-400",
-    topics: [
-      "Citizenship",
-      "National Values",
-      "Human Rights",
-      "Rule of Law",
-      "Democracy",
-      "National Symbols",
-      "Duties & Obligations",
-      "Constitutional Democracy",
-      "Peace & Conflict Resolution",
-      "Corruption",
-      "National Development"
     ]
   }
 ];

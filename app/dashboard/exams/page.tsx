@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FileQuestion,
   Clock,
   Play,
   CheckCircle2,
@@ -24,19 +23,30 @@ import {
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { examsAPI, MockExam, ExamResult } from "@/lib/api";
+import { examsAPI, MockExam, ExamResult, pastQuestionsAPI, AvailablePastQuestions } from "@/lib/api";
 
-// Exam subject options
-const EXAM_SUBJECTS = [
-  { name: "Mathematics", icon: "📐", questionCount: 50, duration: 120 },
-  { name: "Physics", icon: "⚛️", questionCount: 50, duration: 90 },
-  { name: "Chemistry", icon: "🧪", questionCount: 50, duration: 90 },
-  { name: "Biology", icon: "🧬", questionCount: 50, duration: 90 },
-  { name: "English Language", icon: "📚", questionCount: 60, duration: 90 },
-  { name: "Economics", icon: "📊", questionCount: 50, duration: 90 },
+// Subject icons mapping
+const SUBJECT_ICONS: Record<string, string> = {
+  "Mathematics": "📐",
+  "Physics": "⚛️",
+  "Chemistry": "🧪",
+  "Biology": "🧬",
+  "English Language": "📚",
+  "Economics": "📊",
+  "Government": "🏛️",
+  "Literature in English": "📖",
+  "Geography": "🌍",
+  "Agricultural Science": "🌾",
+  "Civic Education": "🧑🏽‍⚖️",
+};
+
+const EXAM_YEARS = ["2025", "2024", "2023", "2022", "2021", "2020", "2019", "Random Mix"];
+
+const EXAM_TYPES = [
+  { name: "JAMB", icon: "🎯", description: "Unified Tertiary Matriculation Examination" },
+  { name: "WAEC", icon: "📝", description: "West African Examinations Council" },
+  { name: "NECO", icon: "📋", description: "National Examinations Council" },
 ];
-
-const EXAM_YEARS = ["2023", "2022", "2021", "2020", "2019", "Random Mix"];
 
 type ExamState = "setup" | "loading" | "in-progress" | "submitting" | "results";
 
@@ -48,6 +58,7 @@ interface Answer {
 
 export default function ExamsPage() {
   const [examState, setExamState] = useState<ExamState>("setup");
+  const [selectedExamType, setSelectedExamType] = useState<string | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -60,21 +71,144 @@ export default function ExamsPage() {
   const [examData, setExamData] = useState<MockExam | null>(null);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [startTime, setStartTime] = useState<number>(0);
+  const [availableSubjects, setAvailableSubjects] = useState<AvailablePastQuestions[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [availableYears, setAvailableYears] = useState<string[]>([]);
+  const [isLoadingYears, setIsLoadingYears] = useState(false);
+  const [numberOfQuestions, setNumberOfQuestions] = useState(100);
+  const [maxQuestions, setMaxQuestions] = useState(100);
+  const [subjectQuestionCounts, setSubjectQuestionCounts] = useState<Record<string, number>>({});
+
+  // Calculate time based on number of questions (1 minute per question, default 120 for 100)
+  const calculateTime = (questions: number) => {
+    if (questions === 100) return 120;
+    return questions; // 1 minute per question
+  };
+
+  // Fetch available subjects when exam type is selected
+  useEffect(() => {
+    const fetchAvailableSubjects = async () => {
+      if (!selectedExamType) {
+        setAvailableSubjects([]);
+        setSelectedSubject(null);
+        setSelectedYear(null);
+        return;
+      }
+
+      setIsLoadingSubjects(true);
+      try {
+        const available = await pastQuestionsAPI.getAvailable(selectedExamType);
+        // Group by subject and sum question counts
+        const subjectMap = new Map<string, number>();
+        available.forEach(item => {
+          const current = subjectMap.get(item.subject) || 0;
+          subjectMap.set(item.subject, current + item.question_count);
+        });
+
+        const subjects: AvailablePastQuestions[] = Array.from(subjectMap.entries()).map(([subject, count]) => ({
+          exam_type: selectedExamType,
+          subject,
+          year: "",
+          question_count: count
+        }));
+
+        setAvailableSubjects(subjects);
+        // Reset subject and year when exam type changes
+        setSelectedSubject(null);
+        setSelectedYear(null);
+      } catch (error) {
+        console.error("Failed to fetch available subjects:", error);
+        setAvailableSubjects([]);
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+
+    fetchAvailableSubjects();
+  }, [selectedExamType]);
+
+  // Fetch available years when subject is selected
+  useEffect(() => {
+    const fetchAvailableYears = async () => {
+      if (!selectedExamType || !selectedSubject) {
+        setAvailableYears([]);
+        setSelectedYear(null);
+        return;
+      }
+
+      setIsLoadingYears(true);
+      try {
+        const available = await pastQuestionsAPI.getAvailable(selectedExamType, selectedSubject);
+        // Extract unique years and sort them (newest first)
+        const years = [...new Set(available.map(item => item.year))].sort((a, b) => b.localeCompare(a));
+        setAvailableYears(years);
+        setSelectedYear(null);
+      } catch (error) {
+        console.error("Failed to fetch available years:", error);
+        setAvailableYears([]);
+      } finally {
+        setIsLoadingYears(false);
+      }
+    };
+
+    fetchAvailableYears();
+  }, [selectedExamType, selectedSubject]);
+
+  // Update question counts when year is selected
+  useEffect(() => {
+    const updateQuestionCounts = async () => {
+      if (!selectedExamType || !selectedYear) {
+        setSubjectQuestionCounts({});
+        setMaxQuestions(100);
+        return;
+      }
+
+      try {
+        const available = await pastQuestionsAPI.getAvailable(
+          selectedExamType,
+          undefined, // Get all subjects
+          selectedYear !== "Random Mix" ? selectedYear : undefined
+        );
+        
+        // Calculate question counts per subject
+        const counts: Record<string, number> = {};
+        available.forEach(item => {
+          counts[item.subject] = (counts[item.subject] || 0) + item.question_count;
+        });
+        setSubjectQuestionCounts(counts);
+
+        // Update max questions for selected subject
+        if (selectedSubject) {
+          const subjectCount = counts[selectedSubject] || 0;
+          setMaxQuestions(subjectCount);
+          setNumberOfQuestions(prev => Math.min(prev, subjectCount || 100));
+        }
+      } catch (error) {
+        console.error("Failed to update question counts:", error);
+      }
+    };
+
+    updateQuestionCounts();
+  }, [selectedExamType, selectedSubject, selectedYear]);
 
   // Start exam - fetch from API
   const startExam = async () => {
-    if (!selectedSubject || !selectedYear) return;
+    if (!selectedExamType || !selectedSubject || !selectedYear) return;
     
     setExamState("loading");
     setError(null);
 
     try {
+      const timeLimit = calculateTime(numberOfQuestions);
+      // Use the minimum of requested questions and available questions
+      const questionsToRequest = maxQuestions > 0 ? Math.min(numberOfQuestions, maxQuestions) : numberOfQuestions;
+      
       const exam = await examsAPI.create({
-        exam_type: "WAEC",
+        exam_type: selectedExamType,
         subject: selectedSubject,
         year: selectedYear === "Random Mix" ? undefined : selectedYear,
-        number_of_questions: 20, // Start with 20 for demo
-        time_limit_minutes: 30
+        number_of_questions: questionsToRequest,
+        time_limit_minutes: timeLimit
       });
 
       setExamData(exam);
@@ -187,12 +321,15 @@ export default function ExamsPage() {
   // Reset exam
   const resetExam = () => {
     setExamState("setup");
+    setSelectedExamType(null);
     setSelectedSubject(null);
     setSelectedYear(null);
     setExamData(null);
     setExamResult(null);
     setAnswers([]);
     setError(null);
+    setNumberOfQuestions(100);
+    setMaxQuestions(100);
   };
 
   // Loading View
@@ -231,56 +368,229 @@ export default function ExamsPage() {
           </motion.div>
         )}
 
-        {/* Subject Selection */}
+        {/* Exam Type Selection */}
         <motion.div variants={itemVariants}>
-          <h3 className="text-lg font-semibold text-foreground mb-4">Select Subject</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {EXAM_SUBJECTS.map((subject) => (
+          <h3 className="text-lg font-semibold text-foreground mb-4">Select Exam Type</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {EXAM_TYPES.map((examType) => (
               <Card
-                key={subject.name}
+                key={examType.name}
                 variant="glass"
                 hover
                 className={cn(
                   "cursor-pointer transition-all",
-                  selectedSubject === subject.name && "border-blue glow-blue"
+                  selectedExamType === examType.name && "border-blue glow-blue"
                 )}
-                onClick={() => setSelectedSubject(subject.name)}
+                onClick={() => setSelectedExamType(examType.name)}
               >
                 <CardContent className="p-4 text-center">
-                  <div className="text-3xl mb-2">{subject.icon}</div>
-                  <h4 className="font-medium text-foreground">{subject.name}</h4>
-                  <p className="text-xs text-muted mt-1">
-                    {subject.questionCount} questions • {subject.duration} mins
-                  </p>
+                  <div className="text-3xl mb-2">{examType.icon}</div>
+                  <h4 className="font-medium text-foreground">{examType.name}</h4>
+                  <p className="text-xs text-muted mt-1">{examType.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </motion.div>
 
+        {/* Subject Selection */}
+        {selectedExamType && (
+          <motion.div 
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Select Subject</h3>
+            {isLoadingSubjects ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-blue animate-spin mr-2" />
+                <p className="text-muted">Loading available subjects...</p>
+              </div>
+            ) : availableSubjects.length === 0 ? (
+              <div className="p-6 rounded-xl bg-card border border-blue-light/20 text-center">
+                <p className="text-muted">No subjects available for {selectedExamType}. Please upload past questions first.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {availableSubjects.map((subject) => {
+                  const questionCount = selectedYear ? (subjectQuestionCounts[subject.subject] || 0) : null;
+                  return (
+                    <Card
+                      key={subject.subject}
+                      variant="glass"
+                      hover
+                      className={cn(
+                        "cursor-pointer transition-all",
+                        selectedSubject === subject.subject && "border-blue glow-blue"
+                      )}
+                      onClick={() => setSelectedSubject(subject.subject)}
+                    >
+                      <CardContent className="p-4 text-center">
+                        <div className="text-3xl mb-2">{SUBJECT_ICONS[subject.subject] || "📚"}</div>
+                        <h4 className="font-medium text-foreground">{subject.subject}</h4>
+                        {questionCount !== null && (
+                          <p className="text-xs text-muted mt-1">
+                            {questionCount} questions available
+                          </p>
+                        )}
+                        {questionCount === null && selectedYear === null && (
+                          <p className="text-xs text-muted mt-1">
+                            Select year to see count
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {/* Year Selection */}
-        <motion.div variants={itemVariants}>
-          <h3 className="text-lg font-semibold text-foreground mb-4">Select Year</h3>
-          <div className="flex flex-wrap gap-3">
-            {EXAM_YEARS.map((year) => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={cn(
-                  "px-6 py-3 rounded-xl font-medium transition-all",
-                  selectedYear === year
-                    ? "bg-gradient-to-r from-blue to-red text-white"
-                    : "bg-card text-muted hover:text-foreground hover:bg-blue-light/10"
-                )}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-        </motion.div>
+        {selectedExamType && selectedSubject && (
+          <motion.div 
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-lg font-semibold text-foreground mb-4">Select Year</h3>
+            {isLoadingYears ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="w-5 h-5 text-blue animate-spin mr-2" />
+                <p className="text-muted text-sm">Loading available years...</p>
+              </div>
+            ) : availableYears.length === 0 ? (
+              <div className="p-4 rounded-xl bg-card border border-blue-light/20 text-center">
+                <p className="text-muted">No years available for {selectedSubject}. Please upload past questions first.</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {/* Random Mix option */}
+                <button
+                  onClick={() => setSelectedYear("Random Mix")}
+                  className={cn(
+                    "px-6 py-3 rounded-xl font-medium transition-all",
+                    selectedYear === "Random Mix"
+                      ? "bg-gradient-to-r from-blue to-red text-white"
+                      : "bg-card text-muted hover:text-foreground hover:bg-blue-light/10"
+                  )}
+                >
+                  Random Mix
+                </button>
+                {/* Available years */}
+                {availableYears.map((year) => (
+                  <button
+                    key={year}
+                    onClick={() => setSelectedYear(year)}
+                    className={cn(
+                      "px-6 py-3 rounded-xl font-medium transition-all",
+                      selectedYear === year
+                        ? "bg-gradient-to-r from-blue to-red text-white"
+                        : "bg-card text-muted hover:text-foreground hover:bg-blue-light/10"
+                    )}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Number of Questions Selection */}
+        {selectedExamType && selectedSubject && selectedYear && (
+          <motion.div 
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card variant="glass" glow="blue">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-foreground">Number of Questions</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl font-bold bg-gradient-to-r from-blue to-red bg-clip-text text-transparent">
+                      {numberOfQuestions}
+                    </span>
+                    <span className="text-sm text-muted">
+                      {maxQuestions > 0 && `(${maxQuestions} available)`}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Selection Buttons */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {[10, 25, 50, 100, 150, 200].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setNumberOfQuestions(num)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg font-medium text-sm transition-all",
+                        numberOfQuestions === num
+                          ? "bg-gradient-to-r from-blue to-red text-white shadow-lg"
+                          : "bg-card text-muted hover:bg-blue-light/10 hover:text-foreground border border-blue-light/20"
+                      )}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Slider */}
+                <div className="mb-6">
+                  <input
+                    type="range"
+                    min="10"
+                    max={200}
+                    step="1"
+                    value={numberOfQuestions}
+                    onChange={(e) => setNumberOfQuestions(Number(e.target.value))}
+                    className="w-full h-3 bg-card rounded-lg appearance-none cursor-pointer"
+                    style={{
+                      background: `linear-gradient(to right, rgb(59, 130, 246) 0%, rgb(59, 130, 246) ${((numberOfQuestions - 10) / 190) * 100}%, rgb(30, 41, 59) ${((numberOfQuestions - 10) / 190) * 100}%, rgb(30, 41, 59) 100%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-muted mt-2">
+                    <span>10</span>
+                    <span>100</span>
+                    <span>200</span>
+                  </div>
+                  {maxQuestions > 0 && numberOfQuestions > maxQuestions && (
+                    <p className="text-xs text-amber-500 mt-2 text-center">
+                      ⚠️ Only {maxQuestions} questions available. Exam will use all available questions.
+                    </p>
+                  )}
+                </div>
+
+                {/* Time Display */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-blue/20 to-red/20 border-2 border-blue/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue/20 flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-blue" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted mb-1">Time Limit</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {calculateTime(numberOfQuestions)} <span className="text-sm font-normal text-muted">minutes</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted">
+                        {numberOfQuestions === 100 ? 'Standard exam time' : '1 min per question'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Exam Settings Summary */}
-        {selectedSubject && selectedYear && (
+        {selectedExamType && selectedSubject && selectedYear && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -291,7 +601,7 @@ export default function ExamsPage() {
                   <div>
                     <h3 className="font-semibold text-foreground mb-2">Ready to Start</h3>
                     <p className="text-muted text-sm">
-                      {selectedSubject} • {selectedYear} • 20 Questions • 30 mins
+                      {selectedExamType} • {selectedSubject} • {selectedYear} • {numberOfQuestions} Questions • {calculateTime(numberOfQuestions)} mins
                     </p>
                   </div>
                   <Button variant="primary" size="lg" onClick={startExam}>
@@ -355,7 +665,7 @@ export default function ExamsPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="font-semibold text-foreground">{selectedSubject}</h2>
+              <h2 className="font-semibold text-foreground">{examData.exam_type} {selectedSubject}</h2>
               <p className="text-sm text-muted">Question {currentQuestionIndex + 1} of {examData.questions.length}</p>
             </div>
           </div>
@@ -364,10 +674,16 @@ export default function ExamsPage() {
             {/* Timer */}
             <div className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl",
-              timeRemaining < 300 ? "bg-red/20 text-red" : "bg-blue/20 text-blue"
+              timeRemaining <= 600 ? "bg-red/20" : "bg-blue/20"
             )}>
-              <Timer className="w-5 h-5" />
-              <span className="font-mono font-bold">{formatTime(timeRemaining)}</span>
+              <Timer className={cn(
+                "w-5 h-5",
+                timeRemaining <= 600 ? "text-red" : "text-white"
+              )} />
+              <span className={cn(
+                "font-mono font-bold",
+                timeRemaining <= 600 ? "text-red" : "text-white"
+              )}>{formatTime(timeRemaining)}</span>
             </div>
 
             {/* Pause */}
@@ -387,27 +703,6 @@ export default function ExamsPage() {
             initial={{ width: 0 }}
             animate={{ width: `${((currentQuestionIndex + 1) / examData.questions.length) * 100}%` }}
           />
-        </div>
-
-        {/* Question Navigation Pills */}
-        <div className="flex flex-wrap gap-2">
-          {examData.questions.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentQuestionIndex(index)}
-              className={cn(
-                "w-10 h-10 rounded-lg font-medium text-sm transition-all",
-                index === currentQuestionIndex
-                  ? "bg-gradient-to-r from-blue to-red text-white"
-                  : answers[index]?.selectedOption !== null
-                    ? "bg-blue/20 text-blue"
-                    : "bg-card text-muted hover:bg-blue-light/10",
-                answers[index]?.flagged && "ring-2 ring-gold"
-              )}
-            >
-              {index + 1}
-            </button>
-          ))}
         </div>
 
         {/* Question Card */}
@@ -467,6 +762,27 @@ export default function ExamsPage() {
             </Card>
           </motion.div>
         </AnimatePresence>
+
+        {/* Question Navigation Pills */}
+        <div className="flex flex-wrap gap-2">
+          {examData.questions.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentQuestionIndex(index)}
+              className={cn(
+                "w-10 h-10 rounded-lg font-medium text-sm transition-all",
+                index === currentQuestionIndex
+                  ? "bg-gradient-to-r from-blue to-red text-white"
+                  : answers[index]?.selectedOption !== null
+                    ? "bg-blue/20 text-blue"
+                    : "bg-card text-muted hover:bg-blue-light/10",
+                answers[index]?.flagged && "ring-2 ring-gold"
+              )}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
 
         {/* Navigation */}
         <div className="flex items-center justify-between">

@@ -39,7 +39,7 @@ export default function AskAIPage() {
 
   const [subjects] = useState([
     "Mathematics", "English Language", "Physics", "Chemistry", "Biology",
-    "Economics", "Geography", "Government", "Literature in English",
+    "Economics", "Geography", "Literature in English",
     "Commerce", "Accounting", "Agricultural Science"
   ]);
 

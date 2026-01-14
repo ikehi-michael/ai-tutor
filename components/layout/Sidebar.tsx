@@ -238,7 +238,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Upgrade Banner */}
+      {/* Upgrade Banner
       {(!isCollapsed || isMobile) && user?.subscription_tier === "free" && (
         <div className="p-4">
           <div className="p-4 rounded-xl bg-gradient-to-br from-red/20 to-blue-light/10 border border-red/20">
@@ -257,7 +257,7 @@ export function Sidebar() {
             </Link>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Bottom Navigation */}
       <div className="p-4 border-t border-[rgba(255,255,255,0.05)] space-y-2">

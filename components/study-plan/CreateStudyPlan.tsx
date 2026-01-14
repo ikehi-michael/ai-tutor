@@ -25,7 +25,7 @@ const EXAMS = [
 // Subject options
 const SUBJECTS = [
   "Mathematics", "Physics", "Chemistry", "Biology",
-  "English Language", "Economics", "Government", "Geography"
+  "English Language", "Economics", "Geography"
 ];
 
 interface CreateStudyPlanProps {

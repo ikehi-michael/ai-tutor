@@ -28,8 +28,8 @@ import { cn } from "@/lib/utils";
 // Subjects list
 const SUBJECTS = [
   "Mathematics", "English Language", "Physics", "Chemistry", "Biology",
-  "Economics", "Geography", "Government", "Literature in English",
-  "Commerce", "Accounting", "Agricultural Science", "Civic Education",
+  "Economics", "Geography", "Literature in English",
+  "Commerce", "Accounting", "Agricultural Science",
   "Computer Studies", "Further Mathematics"
 ];
 
@@ -496,8 +496,7 @@ export default function RegisterPage() {
                 "Personalized study plans",
                 "Topic-by-topic explanations",
                 "Mock exams with instant feedback",
-                "Progress tracking dashboard",
-                "10 free questions every week"
+                "Progress tracking dashboard"
               ].map((item, index) => (
                 <motion.li
                   key={index}

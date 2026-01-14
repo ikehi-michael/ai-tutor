@@ -459,5 +459,71 @@ export const dashboardAPI = {
   },
 };
 
+// ==========================================
+// PAST QUESTIONS API
+// ==========================================
+export interface PastQuestion {
+  id: number;
+  exam_type: string;
+  subject: string;
+  year: string;
+  question_number: number;
+  question_text: string;
+  options: Record<string, string>;
+  correct_answer: string;
+  topic: string | null;
+  source_pdf: string | null;
+  page_number: number | null;
+  created_at: string;
+}
+
+export interface AvailablePastQuestions {
+  exam_type: string;
+  subject: string;
+  year: string;
+  question_count: number;
+}
+
+export const pastQuestionsAPI = {
+  upload: async (
+    file: File,
+    examType: string,
+    subject: string,
+    year: string
+  ): Promise<PastQuestion[]> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("exam_type", examType);
+    formData.append("subject", subject);
+    formData.append("year", year);
+
+    // Create a new axios instance for this request to avoid Content-Type override
+    const formApi = axios.create({
+      baseURL: API_URL,
+      headers: {
+        Authorization: `Bearer ${Cookies.get("access_token")}`,
+        // Don't set Content-Type - let browser set it with boundary
+      },
+    });
+
+    const response = await formApi.post("/api/past-questions/upload", formData);
+    return response.data;
+  },
+
+  getAvailable: async (
+    examType?: string,
+    subject?: string,
+    year?: string
+  ): Promise<AvailablePastQuestions[]> => {
+    const params: Record<string, string> = {};
+    if (examType) params.exam_type = examType;
+    if (subject) params.subject = subject;
+    if (year) params.year = year;
+
+    const response = await api.get("/api/past-questions/available", { params });
+    return response.data;
+  },
+};
+
 export default api;
 

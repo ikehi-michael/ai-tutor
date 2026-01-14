@@ -152,7 +152,7 @@ export function LessonContent({
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-blue/20 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-blue" />
+                  <Brain className="w-5 h-5 text-red" />
                 </div>
                 <h3 className="font-semibold text-foreground">Practice Questions</h3>
               </div>
@@ -163,7 +163,7 @@ export function LessonContent({
                     className="p-4 rounded-xl bg-card hover:bg-blue-light/10 transition-colors cursor-pointer group"
                   >
                     <div className="flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-blue/20 flex items-center justify-center text-xs font-bold text-blue flex-shrink-0">
+                      <span className="w-6 h-6 rounded-full bg-blue/20 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                         {index + 1}
                       </span>
                       <div className="text-muted group-hover:text-foreground transition-colors">
@@ -219,10 +219,10 @@ export function LessonContent({
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Topics
         </Button>
-        <Button variant="primary" className="flex-1" onClick={handlePracticeWithAI}>
+        {/* <Button variant="primary" className="flex-1" onClick={handlePracticeWithAI}>
           <Brain className="w-4 h-4 mr-2" />
           Practice with AI
-        </Button>
+        </Button> */}
       </motion.div>
     </motion.div>
   );
