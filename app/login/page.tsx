@@ -54,6 +54,7 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || "Login failed. Please check your credentials.");
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +109,11 @@ export default function LoginPage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form 
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            className="space-y-5"
+          >
             <Input
               label="Email Address"
               type="email"
@@ -141,11 +146,12 @@ export default function LoginPage() {
             </div>
 
             <Button
-              type="submit"
+              type="button"
               variant="primary"
               size="lg"
               fullWidth
               isLoading={isLoading}
+              onClick={handleSubmit(onSubmit)}
             >
               Log In
               <ArrowRight className="w-5 h-5" />

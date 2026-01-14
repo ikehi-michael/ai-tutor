@@ -26,10 +26,22 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - redirect to login
-      Cookies.remove("access_token");
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+      // Don't redirect if we're already on login/register page or if it's a login/register request
+      const isLoginOrRegisterRequest = 
+        error.config?.url?.includes("/login") || 
+        error.config?.url?.includes("/register");
+      
+      const isOnAuthPage = 
+        typeof window !== "undefined" && 
+        (window.location.pathname === "/login" || window.location.pathname === "/register");
+      
+      // Only redirect if it's not a login/register request and we're not on auth pages
+      if (!isLoginOrRegisterRequest && !isOnAuthPage) {
+        // Token expired or invalid - redirect to login
+        Cookies.remove("access_token");
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);
