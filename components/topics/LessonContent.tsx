@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -10,7 +11,8 @@ import {
   Play,
   RefreshCw,
   ArrowLeft,
-  Copy
+  Copy,
+  Download
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +20,7 @@ import { ContentRenderer } from "@/components/ui/ContentRenderer";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 import { TopicChat } from "./TopicChat";
 import { TopicTeachResponse } from "@/lib/api";
+import { generateLessonPDF } from "@/lib/pdfUtils";
 
 interface LessonContentProps {
   lessonContent: TopicTeachResponse;
@@ -50,6 +53,7 @@ export function LessonContent({
   onCopy
 }: LessonContentProps) {
   const router = useRouter();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const handlePracticeWithAI = () => {
     // Navigate to Ask AI page with subject and topic pre-filled
@@ -58,6 +62,18 @@ export function LessonContent({
       topic: lessonContent.topic
     });
     router.push(`/dashboard/ask?${params.toString()}`);
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      await generateLessonPDF(lessonContent, selectedSubject.name, lessonContent.topic);
+    } catch (error) {
+      console.error("Failed to generate PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   return (
@@ -77,9 +93,7 @@ export function LessonContent({
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-2">Quick Summary</h3>
-                <div className="text-muted leading-relaxed">
-                  <ContentRenderer content={lessonContent.summary} />
-                </div>
+                <ContentRenderer content={lessonContent.summary} />
               </div>
             </div>
           </CardContent>
@@ -90,28 +104,33 @@ export function LessonContent({
       <motion.div variants={itemVariants}>
         <Card variant="glass">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-red/20 flex items-center justify-center flex-shrink-0">
                   <BookMarked className="w-5 h-5 text-red" />
                 </div>
                 <h3 className="font-semibold text-foreground">Detailed Explanation</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => onCopy(lessonContent.detailed_explanation)}>
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  title="Download PDF"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onCopy(lessonContent.detailed_explanation)} title="Copy">
                   <Copy className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={onSimplify}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Simplify
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  <span className="text-xs">Simplify</span>
                 </Button>
               </div>
             </div>
-            <div className="prose prose-invert max-w-none">
-              <div className="text-muted leading-relaxed">
-                <ContentRenderer content={lessonContent.detailed_explanation} />
-              </div>
-            </div>
+            <ContentRenderer content={lessonContent.detailed_explanation} />
           </CardContent>
         </Card>
       </motion.div>
@@ -210,7 +229,7 @@ export function LessonContent({
       )}
 
       {/* Action Buttons */}
-      <motion.div variants={itemVariants} className="flex gap-4">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4">
         <Button
           variant="secondary"
           className="flex-1"
@@ -218,6 +237,15 @@ export function LessonContent({
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Topics
+        </Button>
+        <Button
+          variant="primary"
+          className="flex-1"
+          onClick={handleDownloadPDF}
+          disabled={isGeneratingPDF}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
         </Button>
         {/* <Button variant="primary" className="flex-1" onClick={handlePracticeWithAI}>
           <Brain className="w-4 h-4 mr-2" />

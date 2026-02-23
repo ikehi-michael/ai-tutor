@@ -59,6 +59,7 @@ export interface RegisterData {
   role: "student" | "parent";
   student_class?: "SS1" | "SS2" | "SS3" | "JAMB";
   subjects?: string[];
+  invite_code?: string;
 }
 
 export interface LoginData {
@@ -533,6 +534,169 @@ export const pastQuestionsAPI = {
     if (year) params.year = year;
 
     const response = await api.get("/api/past-questions/available", { params });
+    return response.data;
+  },
+};
+
+// ==========================================
+// INSTITUTION API
+// ==========================================
+export interface SchoolRegisterData {
+  school_name: string;
+  address?: string;
+  phone?: string;
+  email: string;
+  password: string;
+  admin_name: string;
+}
+
+export interface InstitutionProfile {
+  id: number;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string;
+  invite_code: string;
+  max_students: number;
+  max_teachers: number;
+  subscription_tier: string;
+  is_active: boolean;
+  student_count: number;
+  teacher_count: number;
+  created_at: string | null;
+}
+
+export interface TeacherProfile {
+  id: number;
+  full_name: string;
+  email: string;
+  student_count: number;
+  created_at: string | null;
+}
+
+export interface InstitutionStudent {
+  id: number;
+  full_name: string;
+  email: string;
+  student_class: string | null;
+  last_login: string | null;
+  assigned_teacher: string | null;
+}
+
+export interface InstitutionOverview {
+  total_students: number;
+  total_teachers: number;
+  active_today: number;
+  avg_score: number;
+  total_questions_answered: number;
+}
+
+export interface StudentProgress {
+  student: {
+    id: number;
+    name: string;
+    email: string;
+    class: string | null;
+    last_login: string | null;
+  };
+  stats: {
+    total_questions: number;
+    weekly_questions: number;
+    total_exams: number;
+  };
+  subject_performance: Array<{
+    subject: string;
+    accuracy: number;
+    total_questions: number;
+  }>;
+  exam_history: Array<{
+    date: string;
+    subject: string;
+    score: number;
+  }>;
+}
+
+export const institutionAPI = {
+  register: async (data: SchoolRegisterData): Promise<AuthResponse & { institution_id: number; invite_code: string }> => {
+    const response = await api.post("/api/institutions/register", data);
+    return response.data;
+  },
+
+  getInstitution: async (): Promise<InstitutionProfile> => {
+    const response = await api.get("/api/institutions/");
+    return response.data;
+  },
+
+  updateInstitution: async (data: { name?: string; address?: string; phone?: string }) => {
+    const response = await api.put("/api/institutions/", data);
+    return response.data;
+  },
+
+  getInviteCode: async (): Promise<{ invite_code: string }> => {
+    const response = await api.get("/api/institutions/invite-code");
+    return response.data;
+  },
+
+  regenerateInviteCode: async (): Promise<{ invite_code: string }> => {
+    const response = await api.post("/api/institutions/invite-code/regenerate");
+    return response.data;
+  },
+
+  addTeacher: async (data: { email: string; full_name?: string; password?: string }) => {
+    const response = await api.post("/api/institutions/teachers", data);
+    return response.data;
+  },
+
+  getTeachers: async (): Promise<TeacherProfile[]> => {
+    const response = await api.get("/api/institutions/teachers");
+    return response.data;
+  },
+
+  removeTeacher: async (teacherId: number) => {
+    const response = await api.delete(`/api/institutions/teachers/${teacherId}`);
+    return response.data;
+  },
+
+  addStudent: async (data: { email: string; full_name?: string; password?: string; student_class?: string }) => {
+    const response = await api.post("/api/institutions/students", data);
+    return response.data;
+  },
+
+  getStudents: async (): Promise<InstitutionStudent[]> => {
+    const response = await api.get("/api/institutions/students");
+    return response.data;
+  },
+
+  removeStudent: async (studentId: number) => {
+    const response = await api.delete(`/api/institutions/students/${studentId}`);
+    return response.data;
+  },
+
+  assignStudents: async (teacherId: number, studentIds: number[]) => {
+    const response = await api.post("/api/institutions/students/assign", {
+      teacher_id: teacherId,
+      student_ids: studentIds,
+    });
+    return response.data;
+  },
+
+  joinWithCode: async (inviteCode: string) => {
+    const response = await api.post("/api/institutions/join", { invite_code: inviteCode });
+    return response.data;
+  },
+
+  getOverview: async (): Promise<InstitutionOverview> => {
+    const response = await api.get("/api/institutions/overview");
+    return response.data;
+  },
+
+  getStudentProgress: async (studentId: number): Promise<StudentProgress> => {
+    const response = await api.get(`/api/institutions/students/${studentId}/progress`);
+    return response.data;
+  },
+
+  assignTopic: async (data: { student_ids: number[]; subject: string; topic: string }) => {
+    const response = await api.post("/api/institutions/assignments/topic", data);
     return response.data;
   },
 };

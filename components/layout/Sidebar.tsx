@@ -41,6 +41,16 @@ const parentNavigation = [
   { name: "Children Overview", href: "/dashboard/parent", icon: LayoutDashboard },
 ];
 
+// School admin navigation
+const schoolNavigation = [
+  { name: "School Dashboard", href: "/dashboard/school", icon: LayoutDashboard },
+];
+
+// Teacher navigation
+const teacherNavigation = [
+  { name: "Teacher Dashboard", href: "/dashboard/teacher", icon: LayoutDashboard },
+];
+
 const bottomNavigation = [
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
@@ -199,7 +209,14 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {/* Main Navigation - Show based on user role */}
-        {(user?.role === "parent" ? parentNavigation : studentNavigation).map((item) => {
+        {(user?.role === "school"
+          ? schoolNavigation
+          : user?.role === "teacher"
+            ? teacherNavigation
+            : user?.role === "parent"
+              ? parentNavigation
+              : studentNavigation
+        ).map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

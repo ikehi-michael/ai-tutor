@@ -72,7 +72,14 @@ export default function LandingPage() {
   }, [isMobileMenuOpen]);
 
   // Determine dashboard URL based on user role
-  const dashboardUrl = user?.role === "parent" ? "/dashboard/parent" : "/dashboard";
+  const dashboardUrl =
+    user?.role === "school"
+      ? "/dashboard/school"
+      : user?.role === "teacher"
+        ? "/dashboard/teacher"
+        : user?.role === "parent"
+          ? "/dashboard/parent"
+          : "/dashboard";
 
   return (
     <div className="min-h-screen">
@@ -508,17 +515,22 @@ export default function LandingPage() {
                     </Button>
                   </Link>
                 ) : (
-                  <Link href="/register">
-                    <Button variant="primary" size="lg">
-                      <Zap className="w-5 h-5" />
-                      Get Started
-                      <ArrowRight className="w-5 h-5" />
-                    </Button>
-                  </Link>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Link href="/register">
+                      <Button variant="primary" size="lg">
+                        <Zap className="w-5 h-5" />
+                        Get Started
+                        <ArrowRight className="w-5 h-5" />
+                      </Button>
+                    </Link>
+                    <Link href="/register/school">
+                      <Button variant="secondary" size="lg">
+                        <Users className="w-5 h-5" />
+                        Register Your School
+                      </Button>
+                    </Link>
+                  </div>
                 )}
-                {/* <p className="text-muted/70 text-sm mt-6">
-                  No credit card required • 10 free questions per week
-                </p> */}
               </div>
             </div>
           </motion.div>

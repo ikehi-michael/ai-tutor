@@ -44,6 +44,7 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   role: z.enum(["student", "parent"]),
   student_class: z.enum(["SS1", "SS2", "SS3", "JAMB"]).optional(),
+  invite_code: z.string().optional(),
 });
 
 type Step1Data = z.infer<typeof step1Schema>;
@@ -109,8 +110,10 @@ export default function RegisterPage() {
     try {
       const registerData: RegisterData = {
         ...step1Data,
-        ...step2Data,
+        role: step2Data.role,
+        student_class: step2Data.student_class,
         subjects: selectedSubjects,
+        invite_code: step2Data.invite_code || undefined,
       };
 
       const response = await authAPI.register(registerData);
@@ -125,6 +128,7 @@ export default function RegisterPage() {
       } else {
         router.push("/dashboard");
       }
+    
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed. Please try again.");
     } finally {
@@ -340,32 +344,42 @@ export default function RegisterPage() {
 
                   {/* Class Selection (for students) */}
                   {step2Form.watch("role") === "student" && (
-                    <div className="space-y-3">
-                      <label className="block text-sm font-medium text-white/90">
-                        Your Current Class
-                      </label>
-                      <div className="grid grid-cols-4 gap-3">
-                        {["SS1", "SS2", "SS3", "JAMB"].map((cls) => (
-                          <label
-                            key={cls}
-                            className={cn(
-                              "flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all",
-                              step2Form.watch("student_class") === cls
-                                ? "border-blue-light bg-blue-light/10 text-blue-light"
-                                : "border-[rgba(255,255,255,0.1)] text-muted hover:border-[rgba(255,255,255,0.2)]"
-                            )}
-                          >
-                            <input
-                              type="radio"
-                              value={cls}
-                              {...step2Form.register("student_class")}
-                              className="sr-only"
-                            />
-                            <span className="font-semibold">{cls}</span>
-                          </label>
-                        ))}
+                    <>
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-white/90">
+                          Your Current Class
+                        </label>
+                        <div className="grid grid-cols-4 gap-3">
+                          {["SS1", "SS2", "SS3", "JAMB"].map((cls) => (
+                            <label
+                              key={cls}
+                              className={cn(
+                                "flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all",
+                                step2Form.watch("student_class") === cls
+                                  ? "border-blue-light bg-blue-light/10 text-blue-light"
+                                  : "border-[rgba(255,255,255,0.1)] text-muted hover:border-[rgba(255,255,255,0.2)]"
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                value={cls}
+                                {...step2Form.register("student_class")}
+                                className="sr-only"
+                              />
+                              <span className="font-semibold">{cls}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+
+                      <Input
+                        label="School Invite Code (Optional)"
+                        placeholder="e.g. STEM-ABCD-1234"
+                        leftIcon={<BookOpen className="w-5 h-5" />}
+                        hint="Enter the code provided by your school"
+                        {...step2Form.register("invite_code")}
+                      />
+                    </>
                   )}
 
                   <div className="flex gap-4">

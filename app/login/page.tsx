@@ -47,7 +47,11 @@ export default function LoginPage() {
       const userProfile = await authAPI.getProfile();
       setUser(userProfile);
       // Navigate to appropriate dashboard based on role
-      if (response.role === "parent") {
+      if (response.role === "school") {
+        router.push("/dashboard/school");
+      } else if (response.role === "teacher") {
+        router.push("/dashboard/teacher");
+      } else if (response.role === "parent") {
         router.push("/dashboard/parent");
       } else {
         router.push("/dashboard");

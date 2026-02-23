@@ -48,14 +48,29 @@ export default function DashboardLayout({
     }
   }, [isAuthenticated, isInitialized, router]);
 
-  // Redirect parents to parent dashboard if they try to access student pages
+  // Redirect users to their role-specific dashboard if they access the wrong section
   useEffect(() => {
-    if (isInitialized && isAuthenticated && user?.role === "parent") {
-      // Parent can only access /dashboard/parent and /dashboard/settings
-      const allowedParentPaths = ["/dashboard/parent", "/dashboard/settings"];
-      if (!allowedParentPaths.some(path => pathname?.startsWith(path))) {
-        router.push("/dashboard/parent");
-      }
+    if (!isInitialized || !isAuthenticated || !user) return;
+
+    const role = user.role;
+    const roleRedirects: Record<string, { allowed: string[]; fallback: string }> = {
+      parent: {
+        allowed: ["/dashboard/parent", "/dashboard/settings"],
+        fallback: "/dashboard/parent",
+      },
+      school: {
+        allowed: ["/dashboard/school", "/dashboard/settings"],
+        fallback: "/dashboard/school",
+      },
+      teacher: {
+        allowed: ["/dashboard/teacher", "/dashboard/settings"],
+        fallback: "/dashboard/teacher",
+      },
+    };
+
+    const config = roleRedirects[role];
+    if (config && !config.allowed.some((p) => pathname?.startsWith(p))) {
+      router.push(config.fallback);
     }
   }, [isInitialized, isAuthenticated, user, pathname, router]);
 
